@@ -15,7 +15,7 @@ public class SQLiteConnection {
             return conn;
         } catch (SQLException e) {
             System.out.println("Error connecting: " + e.getMessage());
-            return null;
+            throw new RuntimeException("Failed to connect to the database", e);
         }
     }
 

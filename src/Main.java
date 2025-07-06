@@ -8,6 +8,7 @@ public class Main {
 
     public static void main(String[] args) {
         Tables.criarTabelasEViews();
+        Tables.criarProcedimentosEGatilhos();
         Insertions.inserirDados();
 
         try (Connection conn = SQLiteConnection.connect()) {
@@ -28,6 +29,7 @@ public class Main {
                 System.out.println("10 - Publicações com pelo menos 2 likes e 1 hashtag");
                 System.out.println("11 - Comentários em stories de um usuário (com parâmetro)");
                 System.out.println("12 - Publicações com hashtag específica (com parâmetro)");
+                System.out.println("13 - INSERT/UPDATE/DELETE/SELECT (ler operação)");
                 System.out.println("0 - Sair");
 
                 int opcao = Integer.parseInt(scanner.nextLine());
@@ -55,6 +57,7 @@ public class Main {
                         String hashtag = scanner.nextLine();
                         Queries.publicacoesPorHashtag(conn, hashtag);
                     }
+                    case 13 -> Operations.lerOperacao(conn);
                     default -> System.out.println("Opção inválida");
                 }
             }

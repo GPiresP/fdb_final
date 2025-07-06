@@ -176,4 +176,105 @@ public class Tables {
             System.out.println("Erro ao criar tabelas/views: " + e.getMessage());
         }
     }
+
+    public static void criarProcedimentosEGatilhos() {
+        try (Connection conn = SQLiteConnection.connect();
+                Statement stmt = conn.createStatement()) {
+                    
+            // Trigger para validar dados de usuário no INSERT
+            stmt.execute("""
+                CREATE TRIGGER IF NOT EXISTS tr_validate_user_insert
+                BEFORE INSERT ON usuarios
+                FOR EACH ROW
+                BEGIN
+                    -- Validação de email obrigatório
+                    SELECT CASE 
+                        WHEN NEW.email IS NULL OR NEW.email = '' THEN
+                            RAISE(ABORT, 'Email é obrigatório')
+                    END;
+                    
+                    -- Validação de formato de email básico
+                    SELECT CASE 
+                        WHEN NEW.email NOT LIKE '%_@_%._%' THEN
+                            RAISE(ABORT, 'Formato de email inválido')
+                    END;
+                    
+                    -- Validação de email único
+                    SELECT CASE 
+                        WHEN (SELECT COUNT(*) FROM usuarios WHERE email = NEW.email) > 0 THEN
+                            RAISE(ABORT, 'Email já está em uso')
+                    END;
+                    
+                    -- Validação de senha obrigatória e tamanho mínimo
+                    SELECT CASE 
+                        WHEN NEW.senha IS NULL OR LENGTH(NEW.senha) < 8 THEN
+                            RAISE(ABORT, 'Senha deve ter pelo menos 8 caracteres')
+                    END;
+                    
+                    -- Validação de CEP (8 dígitos se fornecido)
+                    SELECT CASE 
+                        WHEN NEW.cep IS NOT NULL AND (NEW.cep < 10000000 OR NEW.cep > 99999999) THEN
+                            RAISE(ABORT, 'CEP deve ter 8 dígitos')
+                    END;
+                    
+                    -- Validação de endereço completo
+                    SELECT CASE 
+                        WHEN (NEW.cep IS NOT NULL OR NEW.numero IS NOT NULL OR NEW.rua IS NOT NULL OR NEW.cidade IS NOT NULL) 
+                             AND (NEW.cep IS NULL OR NEW.numero IS NULL OR NEW.rua IS NULL OR NEW.cidade IS NULL) THEN
+                            RAISE(ABORT, 'Todos os campos de endereço devem ser preenchidos juntos')
+                    END;
+                END;
+            """);
+            
+            // Trigger para validar dados de usuário no UPDATE
+            stmt.execute("""
+                CREATE TRIGGER IF NOT EXISTS tr_validate_user_update
+                BEFORE UPDATE ON usuarios
+                FOR EACH ROW
+                BEGIN
+                    -- Validação de email obrigatório
+                    SELECT CASE 
+                        WHEN NEW.email IS NULL OR NEW.email = '' THEN
+                            RAISE(ABORT, 'Email é obrigatório')
+                    END;
+                    
+                    -- Validação de formato de email básico
+                    SELECT CASE 
+                        WHEN NEW.email NOT LIKE '%_@_%._%' THEN
+                            RAISE(ABORT, 'Formato de email inválido')
+                    END;
+                    
+                    -- Validação de email único (exceto o próprio registro)
+                    SELECT CASE 
+                        WHEN (SELECT COUNT(*) FROM usuarios WHERE email = NEW.email AND id_usuario != NEW.id_usuario) > 0 THEN
+                            RAISE(ABORT, 'Email já está em uso')
+                    END;
+                    
+                    -- Validação de senha obrigatória e tamanho mínimo
+                    SELECT CASE 
+                        WHEN NEW.senha IS NULL OR LENGTH(NEW.senha) < 8 THEN
+                            RAISE(ABORT, 'Senha deve ter pelo menos 8 caracteres')
+                    END;
+                    
+                    -- Validação de CEP (8 dígitos se fornecido)
+                    SELECT CASE 
+                        WHEN NEW.cep IS NOT NULL AND (NEW.cep < 10000000 OR NEW.cep > 99999999) THEN
+                            RAISE(ABORT, 'CEP deve ter 8 dígitos')
+                    END;
+                    
+                    -- Validação de endereço completo
+                    SELECT CASE 
+                        WHEN (NEW.cep IS NOT NULL OR NEW.numero IS NOT NULL OR NEW.rua IS NOT NULL OR NEW.cidade IS NOT NULL) 
+                             AND (NEW.cep IS NULL OR NEW.numero IS NULL OR NEW.rua IS NULL OR NEW.cidade IS NULL) THEN
+                            RAISE(ABORT, 'Todos os campos de endereço devem ser preenchidos juntos')
+                    END;
+                END;
+            """);
+
+            System.out.println("Triggers criados com sucesso!");
+
+        } catch (SQLException e) {
+            System.out.println("Erro ao criar triggers: " + e.getMessage());
+        }
+    }
 }
